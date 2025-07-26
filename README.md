@@ -26,34 +26,6 @@ A minimalistic, feature-rich task management application built with AngularJS, H
 - 🎭 **Smooth Animations** - Hover effects and transitions throughout
 - 🎯 **Intuitive Controls** - Circular and oval buttons with clear iconography
 
-## 🚀 Quick Start
-
-### Option 1: Single File Setup
-1. Download or copy the complete code from the single-file artifact
-2. Save as `index.html`
-3. Open in any modern web browser
-4. Start managing your tasks!
-
-### Option 2: Organized File Structure
-1. Create the following directory structure:
-```
-task-manager/
-├── index.html
-├── css/
-│   └── styles.css
-├── js/
-│   └── app.js
-└── assets/
-    └── uploads/ (for future file storage)
-```
-
-2. Copy the respective code into each file:
-   - `index.html` - Main HTML structure
-   - `css/styles.css` - All styling
-   - `js/app.js` - AngularJS application logic
-
-3. Open `index.html` in your browser
-
 ## 📁 File Structure
 
 ```
@@ -184,7 +156,7 @@ accept=".pdf,.doc,.docx,.txt,.jpg,.png,.jpeg,.zip,.rar"
 
 ## 📄 License
 
-This project is open source and available under the [MIT License](LICENSE).
+This project is open source.
 
 ## 🆘 Support
 
