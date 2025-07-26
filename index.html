@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="en" ng-app="taskApp">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TickleTask</title>
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="css/styles.css">
+    
+    <!-- AngularJS from CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/angular.js/1.8.3/angular.min.js"></script>
+</head>
+<body ng-controller="TaskController">
+    <div class="container">
+        <div class="header">
+            <h1>TickleTask</h1>
+            <p>“Gently annoying your to-dos—until they’re done”</p>
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <span class="stat-number">{{getTotalTasks()}}</span>
+                <span class="stat-label">Total</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{getCompletedTasks()}}</span>
+                <span class="stat-label">Completed</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{getPendingTasks()}}</span>
+                <span class="stat-label">Pending</span>
+            </div>
+            <div class="stat-item">
+                <span class="stat-number">{{getHighPriorityTasks()}}</span>
+                <span class="stat-label">High Priority</span>
+            </div>
+        </div>
+
+        <div class="task-input-section">
+            <div class="input-row">
+                <input 
+                    type="text" 
+                    class="task-input" 
+                    ng-model="newTask.text" 
+                    placeholder="Tickle away your tasks..."
+                    ng-keypress="($event.which === 13) && addTask()"
+                >
+                <select class="select-input" ng-model="newTask.priority">
+                    <option value="low">Low Priority</option>
+                    <option value="medium" selected>Medium Priority</option>
+                    <option value="high">High Priority</option>
+                </select>
+            </div>
+            
+            <div class="input-row">
+                <input 
+                    type="datetime-local" 
+                    class="time-input" 
+                    ng-model="newTask.dueDate"
+                    title="Due Date"
+                >
+                <input 
+                    type="number" 
+                    class="time-input" 
+                    ng-model="newTask.estimatedTime" 
+                    placeholder="Est. hours"
+                    min="0.5" 
+                    step="0.5"
+                    title="Estimated Time (hours)"
+                >
+                
+                <div class="file-upload-wrapper">
+                    <input 
+                        type="file" 
+                        class="file-input" 
+                        id="file-upload"
+                        multiple 
+                        accept=".pdf,.doc,.docx,.txt,.jpg,.png,.jpeg"
+                        onchange="angular.element(this).scope().handleFileUpload(this.files)"
+                    >
+                    <label for="file-upload" class="file-upload-btn">
+                        📎 Attach Files
+                    </label>
+                </div>
+                
+                <button class="btn btn-primary" ng-click="addTask()">
+                    Add Task
+                </button>
+            </div>
+
+            <div ng-if="newTask.attachments.length > 0" class="attachment-list" style="margin-top: 15px;">
+                <div ng-repeat="file in newTask.attachments" class="attachment-item">
+                    📄 {{file.name}}
+                    <button class="attachment-remove" ng-click="removeAttachment($index)" title="Remove file">×</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="filter-section">
+            <button 
+                class="filter-btn" 
+                ng-class="{active: filter === 'all'}"
+                ng-click="setFilter('all')"
+            >
+                All Tasks
+            </button>
+            <button 
+                class="filter-btn" 
+                ng-class="{active: filter === 'pending'}"
+                ng-click="setFilter('pending')"
+            >
+                Pending
+            </button>
+            <button 
+                class="filter-btn" 
+                ng-class="{active: filter === 'completed'}"
+                ng-click="setFilter('completed')"
+            >
+                Completed
+            </button>
+            <button 
+                class="filter-btn" 
+                ng-class="{active: filter === 'high'}"
+                ng-click="setFilter('high')"
+            >
+                High Priority
+            </button>
+            <button 
+                class="filter-btn" 
+                ng-class="{active: filter === 'overdue'}"
+                ng-click="setFilter('overdue')"
+            >
+                Overdue
+            </button>
+        </div>
+
+        <div class="tasks-section">
+            <div ng-if="getFilteredTasks().length === 0" class="empty-state">
+                <div class="empty-state-icon">📋</div>
+                <h3>No tasks found</h3>
+                <p>Add a new task to get started!</p>
+            </div>
+
+            <div 
+                ng-repeat="task in getFilteredTasks() | orderBy:['-priority', 'dueDate'] track by task.id" 
+                class="task-item"
+                ng-class="{completed: task.completed, editing: task.editing}"
+            >
+                <div class="task-header">
+                    <div ng-if="!task.editing" class="task-text" ng-class="{completed: task.completed}">
+                        {{task.text}}
+                    </div>
+                    
+                    <input 
+                        ng-if="task.editing" 
+                        type="text" 
+                        class="task-edit-input" 
+                        ng-model="task.editText"
+                        ng-keypress="($event.which === 13) && saveTask(task)"
+                        ng-blur="saveTask(task)"
+                    >
+
+                    <div class="priority-badge" ng-class="'priority-' + task.priority">
+                        {{task.priority}} Priority
+                    </div>
+                </div>
+
+                <div class="task-meta">
+                    <div ng-if="task.dueDate" class="task-time">
+                        <span>📅</span>
+                        <span>Due: {{formatDate(task.dueDate)}}</span>
+                        <span ng-if="isOverdue(task)" style="color: #dc3545; font-weight: 600;">(Overdue)</span>
+                    </div>
+                    
+                    <div ng-if="task.estimatedTime" class="task-duration">
+                        ⏱️ {{task.estimatedTime}}h estimated
+                    </div>
+
+                    <div ng-if="task.timeSpent > 0" class="task-duration" style="background: rgba(40, 167, 69, 0.1); color: #28a745;">
+                        ✓ {{formatTime(task.timeSpent)}} logged
+                    </div>
+                </div>
+
+                <div ng-if="task.attachments.length > 0" class="task-attachments">
+                    <div class="attachment-list">
+                        <div ng-repeat="file in task.attachments" class="attachment-item" ng-click="downloadFile(file)">
+                            📄 {{file.name}}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="time-tracker" ng-if="!task.completed">
+                    <span>Time Tracker:</span>
+                    <span class="timer-display">{{formatTime(task.currentSession)}}</span>
+                    <button class="timer-btn" ng-click="toggleTimer(task)" title="{{task.timerRunning ? 'Stop' : 'Start'}} Timer">
+                        {{task.timerRunning ? '⏸️' : '▶️'}}
+                    </button>
+                    <button class="timer-btn" ng-click="resetTimer(task)" title="Reset Timer">
+                        🔄
+                    </button>
+                </div>
+
+                <div class="task-actions">
+                    <button 
+                        ng-if="!task.editing && !task.completed" 
+                        class="btn btn-circle btn-complete" 
+                        ng-click="toggleComplete(task)"
+                        title="Mark as complete"
+                    >
+                        ✓
+                    </button>
+                    
+                    <button 
+                        ng-if="!task.editing && task.completed" 
+                        class="btn btn-circle btn-complete" 
+                        ng-click="toggleComplete(task)"
+                        title="Mark as incomplete"
+                    >
+                        ↻
+                    </button>
+                    
+                    <button 
+                        ng-if="!task.editing" 
+                        class="btn btn-circle btn-edit" 
+                        ng-click="editTask(task)"
+                        title="Edit task"
+                    >
+                        ✎
+                    </button>
+                    
+                    <button 
+                        ng-if="task.editing" 
+                        class="btn btn-circle btn-complete" 
+                        ng-click="saveTask(task)"
+                        title="Save changes"
+                    >
+                        ✓
+                    </button>
+                    
+                    <button 
+                        class="btn btn-circle btn-delete" 
+                        ng-click="deleteTask(task)"
+                        title="Delete task"
+                    >
+                        ×
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JavaScript -->
+    <script src="js/app.js"></script>
+</body>
+</html>
