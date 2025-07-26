@@ -1,7 +1,5 @@
-# task-manager-app-tickletask
+# Tickletask
 Personal Task Manager. Tickle your work procrastination and get it done!
-
-# Enhanced Task Manager
 
 A minimalistic, feature-rich task management application built with AngularJS, HTML5, and CSS3. Features a modern opaque design with glass-morphism effects, priority management, time tracking, and document upload support.
 
